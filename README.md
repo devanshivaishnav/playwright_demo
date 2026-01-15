@@ -35,7 +35,7 @@ Test cases:
 4. Filter checks.
 5. Delete a to-do.
 6. Verify persistence after page reload.
-Megative:
+Negative:
 7. Empty todo submission
 8. Extremely long todo text ( Important because it tests input robustness, e.g., overflow.
   // This test will fail everytime because the app does not limit input length.
