@@ -17,10 +17,14 @@ This repository contains **Playwright tests** for the [TodoMVC demo](https://dem
   - Duplicate items
   - Rapid delete
 
-Note: To fix the long text issue change addTodo method in todo.page.ts file:
+### Note to Fix: Limit Long Todo Input
+
+To prevent extremely long todo items from breaking the UI, update the `addTodo` method in `todo.page.ts` as follows:
+
+```ts
 async addTodo(text: string) {
   const trimmed = text.trim();
-  if (!trimmed) return; // ignore empty input
+  if (!trimmed) return; // Ignore empty input
 
   // Limit input to 25 characters
   const finalText = trimmed.length > 25 ? trimmed.slice(0, 25) : trimmed;
