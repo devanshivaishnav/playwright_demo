@@ -1,18 +1,19 @@
-import { defineConfig, devices } from '@playwright/test';  // Import devices
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
   timeout: 120000,
-  fullyParallel: false,  // Sequential
+  fullyParallel: false, // Sequential for TodoMVC
   use: {
-    baseURL: 'https://demo.playwright.dev/todomvc/',  // ← Full TodoMVC
+    baseURL: 'https://demo.playwright.dev',
     trace: 'on-first-retry',
+    headless: true,
   },
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },  // Fixed project
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
-  reporter: [['html'], ['list']],  // Green/red console + report
+  reporter: [['list'], ['html']], // List for CI console + HTML report
 });

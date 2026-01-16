@@ -1,122 +1,101 @@
 import { test, expect } from '@playwright/test';
-import { TodoPage } from '../pages/Todopage';
+import { TodoPage } from '../pages/todo.page';
 
-test('TodoMVC User Story - Complete Flow', async ({ page }) => {
-  const todoPage = new TodoPage(page);
-  await todoPage.goto();
-  console.log('TodoMVC Demo Started');
+test.describe('TodoMVC Demo - User Stories & Edge Cases', () => {
 
-  // ============================================================================
-  // 1. ADD 5 ITEMS
-  // ============================================================================
-  console.log('1. ADDING 5 ITEMS');
-  const items = ['1. Milk', '2. Bread', '3. Eggs', '4. Cheese', '5. Apples'];
-  for (let item of items) {
-    await todoPage.addTodo(item);
-  }
-  await expect(todoPage.todoItems).toHaveCount(5);
-  console.log('1. PASS: 5 items added');
-  await page.waitForTimeout(2000);
+  test.beforeEach(async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    await todoPage.goto();
+    test.info().annotations.push({ type: 'info', description: 'Navigated to TodoMVC Demo' });
+  });
 
-  // ============================================================================
-  // 2. EDIT ITEM #3
-  // ============================================================================
-  console.log('2. EDIT #3 → Yogurt');
-  await todoPage.editTodo(2, '3. Yogurt');
-  await expect(page.locator('label:has-text("3. Yogurt")')).toBeVisible();
-  console.log('2. PASS: Edit works');
-  await page.waitForTimeout(2000);
+  test('1. Add 5 todo items', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    const items = ['1. Milk', '2. Bread', '3. Eggs', '4. Cheese', '5. Apples'];
+    for (const item of items) await todoPage.addTodo(item);
+    await expect(todoPage.todoItems).toHaveCount(5);
+  });
 
-  // ============================================================================
-  // 3. COMPLETE #1 → COMPLETED FILTER
-  // ============================================================================
-  console.log('3. COMPLETE #1 → COMPLETED');
-  await todoPage.completeTodo(0);
-  await todoPage.completedfilter('Completed');
-  await expect(todoPage.todoItems).toHaveCount(1);
-  console.log('3. PASS: 1 completed');
-  await page.waitForTimeout(2000);
+  test('2. Edit an existing todo item', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    await todoPage.addTodo('3. Eggs');
+    await todoPage.editTodo(0, '3. Yogurt');
+    await expect(page.locator('label:has-text("3. Yogurt")')).toBeVisible();
+  });
 
-  // ============================================================================
-  // 4. ACTIVE FILTER (4 items left)
-  // ============================================================================
-  console.log('4. ACTIVE FILTER');
-  await todoPage.activefilter('Active');
-  await expect(todoPage.todoItems).toHaveCount(4);
-  console.log('4. PASS: 4 active items');
-  await page.waitForTimeout(2000);
+  test('3. Mark a todo as completed', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    await todoPage.addTodo('1. Milk');
+    await todoPage.completeTodo(0);
+    await todoPage.filter('Completed');
+    await expect(todoPage.todoItems).toHaveCount(1);
+  });
 
-  // ============================================================================
-  // 5. DELETE ITEM #2
-  // ============================================================================
-  await todoPage.deleteTodo(3);  // Deletes '5. Apples'
-  await expect(todoPage.todoItems).toHaveCount(3);
-  await expect(page.locator('label:has-text("5. Apples")')).not.toBeVisible();
-  console.log('5. PASS: Apples deleted');
-  await page.waitForTimeout(2000);
+  test('4. Filter checks', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    const items = ['1. Milk', '2. Bread', '3. Eggs', '4. Cheese'];
+    for (const item of items) await todoPage.addTodo(item);
+    await todoPage.completeTodo(0); // Complete first
+    await todoPage.filter('Active');
+    await expect(todoPage.todoItems).toHaveCount(3);
+    await todoPage.filter('Completed');
+    await expect(todoPage.todoItems).toHaveCount(1);
+  });
 
-  // ============================================================================
-  // 6. PERSISTENCE (All remaining visible)
-  // ============================================================================
-  console.log('6. PERSISTENCE');
-  await page.reload();
-  const expected = ['2. Bread', '3. Yogurt', '4. Cheese'];
-  for (let item of expected) {
-    await expect(page.locator(`label:has-text("${item}")`)).toBeVisible();
-  }
-  console.log('6. PASS: 3 items persist');
-  await page.waitForTimeout(2000);
-
-  // ============================================================================
-  // 7. NEGATIVE: EMPTY INPUT
-  // ============================================================================
-  console.log('7. EMPTY INPUT');
-  const countBeforeEmpty = await todoPage.todoItems.count();
-  await todoPage.addTodo('');
-  await expect(todoPage.todoItems).toHaveCount(countBeforeEmpty);
-  console.log('7. PASS: Empty ignored');
-  await page.waitForTimeout(2000);
-
-  // ============================================================================
-  // 8. NO CHARACTER LIMIT
-  // ============================================================================
-  console.log('8. LONG TEXT');
-  const veryLong = 'Item'.repeat(50);
-  const countBeforeLong = await todoPage.todoItems.count();
-  await todoPage.addTodo(veryLong);
-  await expect(todoPage.todoItems).toHaveCount(countBeforeLong + 1);
-  console.log('8. PASS: Long text works');
-  await page.waitForTimeout(2000);
-
-  // ============================================================================
-  // 9. SPECIAL CHARACTERS
-  // ============================================================================
-  console.log('9. SPECIAL CHARS');
-  await todoPage.addTodo('Buy @#$% &*() Milk!');
-  await expect(page.locator('label:has-text("@#$%")')).toBeVisible();
-  console.log('9. PASS: Special chars work');
-  await page.waitForTimeout(2000);
-
-  // ============================================================================
-  // 10. ADD SAME ITEM AGAIN
-  // ============================================================================
-  console.log('10. DUPLICATE ITEM');
-  await todoPage.addTodo('4. Cheese');
-  const totalCount = await page.locator('label:has-text("4. Cheese")').count();
-  expect(totalCount).toBeGreaterThan(1);  // 2+ ✓
-  console.log(`10. PASS: ${totalCount} "4. Cheese" items`);
-  await page.waitForTimeout(2000);
-
-  // ============================================================================
-  // 11. RAPID DELETE
-  // ============================================================================
-  console.log('11. RAPID DELETE');
-  const startCount = await todoPage.todoItems.count();
-  for (let i = 0; i < 3; i++) {
+  test('5. Delete a todo', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    await todoPage.addTodo('5. Apples');
     await todoPage.deleteTodo(0);
-  }
-  await expect(todoPage.todoItems).toHaveCount(startCount - 3);
-  console.log('11. PASS: Rapid delete works');
-  console.log('\nALL 11 TESTS PASSED');
-  console.log('Report: http://localhost:9323');
+    await expect(todoPage.todoItems).toHaveCount(0);
+  });
+
+  test('6. Verify persistence after page reload', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    const expected = ['2. Bread', '3. Yogurt', '4. Cheese'];
+    for (const item of expected) await todoPage.addTodo(item);
+    await page.reload();
+    await todoPage.verifyTodos(expected);
+  });
+
+  test('7. Negative: Empty todo submission', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    const countBefore = await todoPage.todoItems.count();
+    await todoPage.addTodo('');
+    await expect(todoPage.todoItems).toHaveCount(countBefore);
+  });
+
+  // This test will fail everytime because the app does not limit input length.
+  // Unreliable behavior may occur. I'd add a character limit for production apps.
+  // Solution: I'd fix it by adding a character limit check quickly. Less than 25 characters only for items.
+  test('8. Negative: Extremely long todo text', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    const veryLong = 'Item'.repeat(50);
+    const countBefore = await todoPage.todoItems.count();
+    await todoPage.addTodo(veryLong);
+    await expect(todoPage.todoItems).toHaveCount(countBefore + 1);
+  });
+
+  test('9. Special characters', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    await todoPage.addTodo('Buy @#$% &*() Milk!');
+    await expect(page.locator('label:has-text("@#$%")')).toBeVisible();
+  });
+
+  test('10. Multiple todos with similar names', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    await todoPage.addTodo('4. Cheese');
+    await todoPage.addTodo('4. Cheese');
+    const totalCount = await page.locator('label:has-text("4. Cheese")').count();
+    expect(totalCount).toBeGreaterThan(1);
+  });
+
+  test('11. Rapid delete', async ({ page }) => {
+    const todoPage = new TodoPage(page);
+    const items = ['1', '2', '3', '4'];
+    for (const item of items) await todoPage.addTodo(item);
+    const startCount = await todoPage.todoItems.count();
+    for (let i = 0; i < 3; i++) await todoPage.deleteTodo(0);
+    await expect(todoPage.todoItems).toHaveCount(startCount - 3);
+  });
+
 });
