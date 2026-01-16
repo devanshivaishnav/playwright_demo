@@ -1,70 +1,99 @@
-Project Demo:  TodoMVC - Make a simple testing structure that covers all the aspects of the website.
+# Playwright TodoMVC Tests
 
-1. Setup in VS code:
-Open VS Code → Extensions (Ctrl+Shift+X) → install:
-Playwright Test for VSCode (by Microsoft)
-2. Create Playwright Project (TypeScript):
-VScode Terminal/Bash:
-mkdir playwright-todomvc
+This repository contains **Playwright tests** for the [TodoMVC demo](https://demo.playwright.dev/todomvc) application.
+
+---
+
+## Features
+
+- Adds multiple todo items
+- Edit, complete, delete todos
+- Filters: All / Active / Completed
+- Persistence check after reload
+- Negative & edge cases:
+  - Empty input
+  - Long text input
+  - Special characters
+  - Duplicate items
+  - Rapid delete
+
+Note: To fix the long text issue change addTodo method in todo.page.ts file:
+async addTodo(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return; // ignore empty input
+
+  // Limit input to 25 characters
+  const finalText = trimmed.length > 25 ? trimmed.slice(0, 25) : trimmed;
+
+  await this.todoInput.fill(finalText);
+  await this.todoInput.press('Enter');
+}
+
+---
+
+## Setup
+
+1. Clone repo:
+
+Terminal/bash:
+git clone <repo-url>
+cd <repo-folder>
+
+2. Install dependencies:
+npm ci
+npx playwright install --with-deps
+
+
+3. Create Playwright Project (TypeScript): 
+VScode Terminal/Bash: 
+mkdir playwright-todomvc 
 cd playwright-todomvc
-
-VScode Terminal/Bash:
 npm init playwright@latest
 
-When prompted choose:
-✔ TypeScript
-✔ tests
-✔ GitHub Actions (yes)
-✔ Install browsers (yes)
-
-This creates the following structre:
-playwright-todomvc/
-├─ tests/
-├─ playwright.config.ts
-├─ package.json
-
-Sanity check: (Terminal)
+4. Run tests:
 npx playwright test
 
+5. Show report:
+npx playwright show-report
 
-Test cases:
- Positive:
-1. Fill and Enter 5 to-do items. *
-2. Edit an existing to-do item. *
-3. Mark a to-do as completed. *
-4. Filter checks.
-5. Delete a to-do.
-6. Verify persistence after page reload.
-Negative:
-7. Empty todo submission
-8. Extremely long todo text ( Important because it tests input robustness, e.g., overflow.
-  // This test will fail everytime because the app does not limit input length.
-  // Unreliable behavior may occur. I'd add a character limit for production apps.
-  // (Part 4: Intentional failure covered.)) Solution: I'd fix it by adding a character limit check quickly. Less than 25 characters only for items.
-9. Special Characters
-10. Multiple todos with similar names
-11. Rapid delete
+6. CI/CD with github actions:
 
-Run tests:
-npx playwright test --headed
-or
-npx playwright test --ui
+## CI/CD with GitHub Actions
 
-CI config:
-GitHub Actions workflow auto-created at .github/workflows/playwright.yml. Runs on every push/PR. VM Spin-up: Ubuntu runner (60min timeout)
+This project is configured to automatically run Playwright tests using **GitHub Actions** on every push or pull request to `main` or `master`.
 
-What it does:
+### Workflow Steps
 
-Installs Node.js + Playwright browsers
-Executes npx playwright test
-Uploads HTML test report as artifact
-Supports Chromium/Firefox/WebKit
+1. **Checkout Code**
+   - The workflow pulls your latest code using `actions/checkout`.
 
-Steps:
-1. Checkout code ✅ 2s
-2. Setup Node 20 ✅ 30s  
-3. npm ci (install deps) ✅ 1min
-4. npx playwright install --with-deps ✅ 2min
-5. npx playwright test ✅ 1-3min (11 tests)
-6. Upload report artifact ✅ 10s
-Output: Green/red status + HTML report download
+2. **Setup Node**
+   - Installs Node.js (latest LTS) using `actions/setup-node`.
+
+3. **Install Dependencies**
+   - Installs all npm dependencies reproducibly via `npm ci`.
+
+4. **Install Playwright Browsers**
+   - Installs Chromium, Firefox, and WebKit along with OS dependencies.
+
+5. **Run Tests**
+   - Executes Playwright tests using `npx playwright test`.
+
+6. **Upload Test Report**
+   - Uploads the Playwright HTML report to GitHub Actions artifacts.
+   - The report is retained for 30 days and can be downloaded directly from the workflow run.
+
+### How to Access Reports
+
+1. Go to the GitHub Actions tab.
+2. Open the latest workflow run.
+3. Look for **Artifacts → playwright-report**.
+4. Download and open `index.html` in a browser to see detailed test results.
+
+### Notes
+
+- This workflow is simple and only runs **one job on Ubuntu**.
+- You can extend it later to test **multiple browsers**, run **parallel jobs**, or **upload traces** for debugging flaky tests.
+- The workflow ensures that tests **fail the CI job if any test fails**, helping catch bugs early.
+
+
