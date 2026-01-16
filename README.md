@@ -16,6 +16,10 @@ This repository contains **Playwright tests** for the [TodoMVC demo](https://dem
   - Special characters
   - Duplicate items
   - Rapid delete
+  
+## Why baseURL + relative paths?
+baseURL: 'https://demo.playwright.dev' + goto('/todomvc/') = full URL automatically.
+Keeps tests clean, maintainable, and follows Playwright best practices.
 
 ### Note to Fix: Limit Long Todo Input
 
